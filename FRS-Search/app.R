@@ -16,8 +16,8 @@
 
 
 library(shiny)
-library(pool)
-library(dplyr)
+#library(pool)
+#library(dplyr)
 library(DBI)
 
 conn <- dbConnect(
