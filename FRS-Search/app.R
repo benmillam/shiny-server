@@ -19,6 +19,7 @@ library(shiny)
 #library(pool)
 #library(dplyr)
 library(DBI)
+library(DT) #JavaScript data tables
 
 conn <- dbConnect(
   drv = RMySQL::MySQL(),
@@ -49,11 +50,20 @@ ui <- fluidPage(
      column(3,
             selectInput(inputId = 'state_code', label = 'State', choices = state_codes, selected = '-', multiple = FALSE)
      ),
-     column(4, offset = 1,
-           actionButton("fetch_button", "Query Database") 
+     column(9,
+            textInput(inputId = "county_text", label = "Find text in County")     
+     )
+   ),
+   fluidRow(
+     column(12,
+            textInput(inputId = "match_text", label = "Find text in Name or Address")    
+     )
      ),
-     column(4,
-        renderText("That")    
+   fluidRow(
+     column(12,
+            actionButton("fetch_button", "Query Database"),
+            br(),
+            tags$em("may take several seconds, will show blank table if no results")
      )
    ),
   hr(),
@@ -65,14 +75,21 @@ ui <- fluidPage(
     #  ),
       
       # Show a plot of the generated distribution
-  mainPanel(
-      tableOutput("tbl")
+  
+  fluidRow(
+    column(12,
+           #tableOutput("tbl")
+           DTOutput("tbl")
+    )
   )
+
 )
 
 # Define server logic required to draw a histogram
 server <- function(input, output) {
-  
+    
+    
+    
     returned_data <- eventReactive(input$fetch_button, {
       conn <- dbConnect(
         drv = RMySQL::MySQL(),
@@ -85,15 +102,36 @@ server <- function(input, output) {
       if (input$state_code == '-') {
         print('No state selected')
       } else {
-        dbGetQuery(conn, paste0(
-          "SELECT * FROM frs_facilities WHERE state = '",input$state_code,"' LIMIT 200;"))
+        text_to_match <- input$match_text
+        county_text_to_match <- input$county_text
+        
+        results <- dbGetQuery(conn, paste0(
+          "SELECT * FROM facility ", 
+          "WHERE state = '",input$state_code,"' ",
+          "AND county LIKE '%",county_text_to_match,"%' ",
+          "AND (name LIKE '%",text_to_match,"%' OR address LIKE '%",text_to_match,"%') ",
+          "LIMIT 2000;"))
+        
+        if (nrow(results) == 0) {
+          results
+        } else {
+          results$frsurl <- paste('<a href="',results$frsurl,'" target="_blank">Facility Detail Report</a>')
+          results
+        }
       }
     })  
   
     output$tbl <- 
-      renderTable({
+      renderDT({
         returned_data()#reactive expressions need to be invoked!
-    })
+        },
+        escape = FALSE,
+        options = list(
+          
+          columnDefs = list(list(width = '600px', targets = c(2))),
+          scrollX = TRUE
+        )
+      )
     
 }
 
