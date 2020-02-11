@@ -47,7 +47,7 @@ ui <- fluidPage(
             selectInput(inputId = 'state_code', label = 'State', choices = state_codes, selected = '-', multiple = FALSE)
      ),
      column(9,
-            textInput(inputId = "county_text", label = "Find text in County")     
+            textInput(inputId = "county_text", label = "County contains:")     
      )
    ),
    fluidRow(
