@@ -92,6 +92,7 @@ server <- function(input, output) {
         username = Sys.getenv("aws_rds_db_user"),
         password = Sys.getenv("aws_rds_db_pass")
       )
+      dbSendQuery(conn, "SET  NAMES utf8")
       on.exit(dbDisconnect(conn), add = TRUE)
       if (input$state_code == '-') {
         print('No state selected')
