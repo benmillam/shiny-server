@@ -21,20 +21,15 @@ library(shiny)
 library(DBI)
 library(DT) #JavaScript data tables
 
-conn <- dbConnect(
-  drv = RMySQL::MySQL(),
-  dbname = "frs_facilities",
-  host = "frs-db.ckmkzk29kimh.us-east-1.rds.amazonaws.com",
-  username = Sys.getenv("aws_rds_db_user"),
-  password = Sys.getenv("aws_rds_db_pass")
-  )
 
-rs <- dbSendQuery(conn, "SELECT * FROM frs_facilities LIMIT 5;")
+
+#multiline commenting
+'rs <- dbSendQuery(conn, "SELECT * FROM frs_facilities LIMIT 5;")
 
 dbFetch(rs)
 
 dbClearResult(rs)
-dbDisconnect(conn)
+dbDisconnect(conn)'
 
 state_codes = c("-","AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","FM","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MH","MI","MN","MO","MP","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","PW","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY")
 
@@ -109,7 +104,7 @@ server <- function(input, output) {
           "WHERE state = '",input$state_code,"' ",
           "AND county LIKE '%",county_text_to_match,"%' ",
           
-          "LIMIT 2000;"))
+          "LIMIT 10000;"), n = Inf)
           #"AND (name LIKE '%",text_to_match,"%' OR address LIKE '%",text_to_match,"%') ",
           #I removed that part of the query, letting the DT package do the text searching
         
