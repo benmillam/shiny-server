@@ -36,13 +36,14 @@ dbFetch(rs)
 dbClearResult(rs)
 dbDisconnect(conn)
 
-state_codes = c('-','AK','CA')
+state_codes = c("-","AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","FM","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MH","MI","MN","MO","MP","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","PW","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY")
 
 # Define UI for application that draws a histogram
 ui <- fluidPage(
    
    # Application title
-   #titlePanel("FRS Search"),
+   h3("FRS Search"),
+   p("Search 4+ million EPA FRS facility records."),
    
    
    
@@ -56,14 +57,9 @@ ui <- fluidPage(
    ),
    fluidRow(
      column(12,
-            textInput(inputId = "match_text", label = "Find text in Name or Address")    
-     )
-     ),
-   fluidRow(
-     column(12,
             actionButton("fetch_button", "Query Database"),
             br(),
-            tags$em("may take several seconds, will show blank table if no results")
+            tags$em("may take 10+ seconds, if no results then will show blank table with headers")
      )
    ),
   hr(),
@@ -79,7 +75,10 @@ ui <- fluidPage(
   fluidRow(
     column(12,
            #tableOutput("tbl")
-           DTOutput("tbl")
+           DTOutput("tbl"),
+           br(),
+           br(),
+           tags$em("In testing: results limited to 10,000.")
     )
   )
 
@@ -102,15 +101,17 @@ server <- function(input, output) {
       if (input$state_code == '-') {
         print('No state selected')
       } else {
-        text_to_match <- input$match_text
+        
         county_text_to_match <- input$county_text
         
         results <- dbGetQuery(conn, paste0(
           "SELECT * FROM facility ", 
           "WHERE state = '",input$state_code,"' ",
           "AND county LIKE '%",county_text_to_match,"%' ",
-          "AND (name LIKE '%",text_to_match,"%' OR address LIKE '%",text_to_match,"%') ",
+          
           "LIMIT 2000;"))
+          #"AND (name LIKE '%",text_to_match,"%' OR address LIKE '%",text_to_match,"%') ",
+          #I removed that part of the query, letting the DT package do the text searching
         
         if (nrow(results) == 0) {
           results
