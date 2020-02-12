@@ -98,16 +98,18 @@ server <- function(input, output) {
         print('No state selected')
       } else {
         
+        state_code_to_match <- input$state_code
         county_text_to_match <- input$county_text
         
-        results <- dbGetQuery(conn, paste0(
-          "SELECT * FROM facility ", 
-          "WHERE state = '",input$state_code,"' ",
-          "AND county LIKE '%",county_text_to_match,"%' ",
-          
-          "LIMIT 10000;"), n = Inf)
-          #"AND (name LIKE '%",text_to_match,"%' OR address LIKE '%",text_to_match,"%') ",
-          #I removed that part of the query, letting the DT package do the text searching
+        dbi_huh <- dbSendQuery(conn,
+          "SELECT * FROM facility 
+           WHERE state = ? 
+           AND county LIKE %?%
+           LIMIT 10000;") #tried passing params arg but gave unused arg error, contrary to docs
+        
+        dbi_result <- dbBind(dbi_huh, list(state_code_to_match,county_text_to_match))
+        
+        results <- dbFetch(dbi_result, n = Inf)
         
         if (nrow(results) == 0) {
           results
