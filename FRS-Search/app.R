@@ -1,42 +1,13 @@
-#
-# This is a Shiny web application. You can run the application by clicking
-# the 'Run App' button above.
-#
-# Find out more about building applications with Shiny here:
-#
-#    http://shiny.rstudio.com/
-#
-
-#install.packages("shiny")
-#install.packages("DBI")
-#install.packages("dplyr")
-#install.packages("dbplyr")
-#install.packages("pool")
-#install.packages("RMySQL")
-
-
 library(shiny)
-#library(pool)
-#library(dplyr)
 library(DBI)
+library(RMariaDB)
 library(DT) #JavaScript data tables
-
-
-
-#multiline commenting
-'rs <- dbSendQuery(conn, "SELECT * FROM frs_facilities LIMIT 5;")
-
-dbFetch(rs)
-
-dbClearResult(rs)
-dbDisconnect(conn)'
+library(shinycssloaders) #'loading' icon while query is fetched
 
 state_codes = c("-","AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","FM","GA","GU","HI","IA","ID","IL","IN","KS","KY","LA","MA","MD","ME","MH","MI","MN","MO","MP","MS","MT","NC","ND","NE","NH","NJ","NM","NV","NY","OH","OK","OR","PA","PR","PW","RI","SC","SD","TN","TX","UT","VA","VI","VT","WA","WI","WV","WY")
 
-# Define UI for application that draws a histogram
 ui <- fluidPage(
    
-   # Application title
    h3("FRS Search"),
    p("Search 4+ million EPA FRS facility records."),
    
@@ -58,35 +29,28 @@ ui <- fluidPage(
      )
    ),
   hr(),
-   
-   # Sidebar with a slider input for number of bins 
-   #sidebarLayout(
-  #    sidebarPanel(
-   #      selectInput(inputId = 'state_code', label = 'State', choices = state_codes, selected = '-', multiple = FALSE)
-    #  ),
-      
-      # Show a plot of the generated distribution
+ 
+  tags$em(textOutput("warning"), style="color: red; margin: 20px;"),
+ 
   
   fluidRow(
     column(12,
            #tableOutput("tbl")
-           DTOutput("tbl"),
+           withSpinner(DTOutput("tbl"), color="#0064bd"),
            br(),
            br(),
-           tags$em("In testing: results limited to 10,000.")
     )
   )
 
 )
 
-# Define server logic required to draw a histogram
 server <- function(input, output) {
-    
-    
+  
+    large_result_set_warning_threshold <- 100000
     
     returned_data <- eventReactive(input$fetch_button, {
       conn <- dbConnect(
-        drv = RMySQL::MySQL(),
+        drv = RMariaDB::MariaDB(),
         dbname = "frs_facilities",
         host = "frs-db.ckmkzk29kimh.us-east-1.rds.amazonaws.com",
         username = Sys.getenv("aws_rds_db_user"),
@@ -97,20 +61,25 @@ server <- function(input, output) {
       if (input$state_code == '-') {
         print('No state selected')
       } else {
-        
         state_code_to_match <- input$state_code
         county_text_to_match <- input$county_text
         
-        dbi_huh <- dbSendQuery(conn,
+        dbi_result <- dbSendQuery(conn,
           "SELECT * FROM facility 
-           WHERE state = ? 
-           AND county LIKE %?%
-           LIMIT 10000;") #tried passing params arg but gave unused arg error, contrary to docs
+           WHERE state = ? AND county LIKE ?
+           ;")
         
-        dbi_result <- dbBind(dbi_huh, list(state_code_to_match,county_text_to_match))
+        dbBind(dbi_result, list(state_code_to_match, paste0("%",county_text_to_match,"%")))
         
         results <- dbFetch(dbi_result, n = Inf)
         
+        if (RMariaDB::dbGetRowCount(dbi_result) > large_result_set_warning_threshold) {
+          output$warning <- renderText("Heads up! Your query generated more than 100,000 results, performance may be slower than usual.")
+        } 
+        
+        dbClearResult(dbi_result)
+        
+        #convert urls in database to clickable links for DT output
         if (nrow(results) == 0) {
           results
         } else {
