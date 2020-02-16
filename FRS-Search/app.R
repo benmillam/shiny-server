@@ -45,20 +45,33 @@ ui <- fluidPage(
 )
 
 
-server <- function(input, output) {
-    
-    input_validated <- FALSE
+server <- function(input, output, session) {
     
     large_result_set_warning_threshold <- 100000
     
-    #input_vars <- reactiveValuesToList(input)
-    
     observe({
-        
-        if(input$state_code == 'CA') {input_validated <- TRUE}
+      
+      query <- parseQueryString(session$clientData$url_search)
+      
+      url_param_state = query[["state_code"]]
+      url_param_county = query[["county_text"]]
+      
+      if (!is.null(url_param_state) && (url_param_state %in% state_codes)) {
+        updateTextInput(session, "state_code", value = url_param_state)
+      } else {
+        updateTextInput(session, "state_code", value = "-")
+        output$warning <- renderText("Please select a state!")
+      }
+      
+      if (!is.null(url_param_county)) {
+        updateTextInput(session, "county_text", value = url_param_county)
+      } else {
+        updateTextInput(session, "county_text", value = "")
+      }
+      
       })
     
-    if (input_validated) {
+    
       returned_data <- eventReactive(input$fetch_button, {
       conn <- dbConnect(
         drv = RMariaDB::MariaDB(),
@@ -99,9 +112,7 @@ server <- function(input, output) {
         }
       }
       })
-    }
-  
-    
+
       output$tbl <- 
       renderDT({
         returned_data()#reactive expressions need to be invoked!
