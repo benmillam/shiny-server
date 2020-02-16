@@ -44,11 +44,22 @@ ui <- fluidPage(
 
 )
 
+
 server <- function(input, output) {
-  
+    
+    input_validated <- FALSE
+    
     large_result_set_warning_threshold <- 100000
     
-    returned_data <- eventReactive(input$fetch_button, {
+    #input_vars <- reactiveValuesToList(input)
+    
+    observe({
+        
+        if(input$state_code == 'CA') {input_validated <- TRUE}
+      })
+    
+    if (input_validated) {
+      returned_data <- eventReactive(input$fetch_button, {
       conn <- dbConnect(
         drv = RMariaDB::MariaDB(),
         dbname = "frs_facilities",
@@ -87,9 +98,11 @@ server <- function(input, output) {
           results
         }
       }
-    })  
+      })
+    }
   
-    output$tbl <- 
+    
+      output$tbl <- 
       renderDT({
         returned_data()#reactive expressions need to be invoked!
         },
@@ -100,7 +113,6 @@ server <- function(input, output) {
           scrollX = TRUE
         )
       )
-    
 }
 
 # Run the application 
