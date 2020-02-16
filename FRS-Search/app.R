@@ -25,7 +25,12 @@ ui <- fluidPage(
      column(12,
             actionButton("fetch_button", "Query Database"),
             br(),
-            tags$em("may take 10+ seconds, if no results then will show blank table with headers")
+            tags$em("may take 10+ seconds, if no results then the table BELOW the purple table will show as a blank table with headers")
+     )
+   ),
+   fluidRow(
+     column(12,
+            DTOutput("hifld_record")
      )
    ),
   hr(),
@@ -52,6 +57,45 @@ server <- function(input, output, session) {
     observe({
       
       query <- parseQueryString(session$clientData$url_search)
+      
+      url_param_hifld_name = query[["hifld_name"]]
+      if (is.null(url_param_hifld_name)){url_param_hifld_name = ""}
+      
+      url_param_hifld_address = query[["hifld_address"]]
+      if (is.null(url_param_hifld_address)){url_param_hifld_address = ""}
+      
+      url_param_hifld_city = query[["hifld_city"]]
+      if (is.null(url_param_hifld_city)){url_param_hifld_city = ""}
+      
+      url_param_hifld_zip = query[["hifld_zip"]]
+      if (is.null(url_param_hifld_zip)){url_param_hifld_zip = ""}
+      
+      cat(url_param_hifld_name)
+      cat(url_param_hifld_address)
+      cat(url_param_hifld_city)
+      cat(url_param_hifld_zip)
+      
+      #sloppy hack with setting a global var from within observe() but for now faster than learning the scoping here
+      hifld_from_google_sheet <- data.frame(
+        NAME = url_param_hifld_name, 
+        ADDRESS = url_param_hifld_address, 
+        CITY = url_param_hifld_city, 
+        ZIP = url_param_hifld_zip
+      )
+      
+      formatted_hifld_table <<- datatable(
+        hifld_from_google_sheet,
+        options = list(
+          dom = 't',
+          initComplete = JS("
+              function(settings, json) {
+              $(this.api().table().header()).css({
+              'background-color': '#d1c5e8',
+              'color': '#000'
+            });
+            }")
+        )
+      )
       
       url_param_state = query[["state_code"]]
       url_param_county = query[["county_text"]]
@@ -114,16 +158,21 @@ server <- function(input, output, session) {
       })
 
       output$tbl <- 
-      renderDT({
-        returned_data()#reactive expressions need to be invoked!
-        },
-        escape = FALSE,
-        options = list(
-          
-          columnDefs = list(list(width = '600px', targets = c(2))),
-          scrollX = TRUE
+        renderDT({
+          returned_data()#reactive expressions need to be invoked!
+          },
+          escape = FALSE,
+          options = list(
+            
+            columnDefs = list(list(width = '600px', targets = c(2))),
+            scrollX = TRUE
+          )
         )
-      )
+      
+      
+      
+      output$hifld_record <- 
+        renderDT(formatted_hifld_table)
 }
 
 # Run the application 
