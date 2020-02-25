@@ -59,7 +59,7 @@ themes <- unique(hashtags$theme)
 ui <- fluidPage(
    tags$style(type="text/css", "div textarea#post_text {width:100%} div.col-sm-12 div.shiny-input-container {width:100%}"),
    h3("IG-HT-Generator"),
-   p("Description"),
+   p("Selects one random hashtag from each chosen theme, up to 5 hashtags total."),
    
    
    
