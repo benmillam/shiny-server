@@ -8,6 +8,8 @@ state_codes = c("-","AK","AL","AR","AS","AZ","CA","CO","CT","DC","DE","FL","FM",
 
 ui <- fluidPage(
    
+   tags$head(tags$script(src = "populate_search.js")),
+  
    h3("FRS Search"),
    p("Search 4+ million EPA FRS facility records."),
    
@@ -34,6 +36,17 @@ ui <- fluidPage(
      )
    ),
   hr(),
+  
+  actionButton("showtxt", "correctional", onclick = "set_search('correctional')"),
+  actionButton("showtxt", "detention", onclick = "set_search('detention')"),
+  actionButton("showtxt", "youth", onclick = "set_search('youth')"),
+  actionButton("showtxt", "prison", onclick = "set_search('prison')"),
+  actionButton("showtxt", "justice", onclick = "set_search('justice')"),
+  actionButton("showtxt", "juvenile", onclick = "set_search('juvenile')"),
+  actionButton("showtxt", "sheriff", onclick = "set_search('sheriff')"),
+  actionButton("showtxt", "jail", onclick = "set_search('jail')"),
+
+  hr(),
  
   tags$em(textOutput("warning"), style="color: red; margin: 20px;"),
  
@@ -48,7 +61,6 @@ ui <- fluidPage(
   )
 
 )
-
 
 server <- function(input, output, session) {
     
