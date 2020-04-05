@@ -47,6 +47,7 @@ ui <- fluidPage(
   actionButton("showtxt", "jail", onclick = "set_search('jail')"),
   actionButton("showtxt", "penitentiary", onclick = "set_search('penitentiary')"),
   actionButton("showtxt", "doc", onclick = "set_search('doc')"),
+  actionButton("showtxt", "safety", onclick = "set_search('safety')"),
 
   hr(),
  
