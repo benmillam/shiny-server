@@ -148,7 +148,7 @@ server <- function(input, output, session) {
         county_text_to_match <- input$county_text
         
         dbi_result <- dbSendQuery(conn,
-          "SELECT * FROM FrsFacility 
+          "SELECT * FROM FrsFacilityB 
            WHERE state = ? AND county LIKE ?
            ;")
         
